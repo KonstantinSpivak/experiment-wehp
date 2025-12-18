@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue 3 Composition API</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid white;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 { margin-bottom: 10px; }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            border-radius: 8px;
+            margin: 20px auto;
+            display: block;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.3);
+            color: white;
+            border: 1px solid white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        button:hover { background: rgba(255,255,255,0.5); }
+        button:disabled { opacity: 0.5; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .stat {
+            padding: 10px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-label { font-size: 12px; opacity: 0.8; }
+        .stat-value { font-size: 16px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script type="module">
+        const { createApp, ref, onBeforeUnmount } = Vue;
+
+        createApp({
+            template: `
+                <div class="container">
+                    <a href="../index.html" class="back-btn">← На главную</a>
+                    <div class="card">
+                        <h1>Vue 3 Composition API Player</h1>
+                        <p style="color: #ddd; margin-bottom: 20px;">WebRTC плеер на Vue 3 Composition API</p>
+
+                        <video
+                            ref="videoRef"
+                            autoplay
+                            muted
+                            controls
+                            style="width: 100%; max-width: 800px; background: #000; border-radius: 8px; margin: 20px auto; display: block;"
+                        ></video>
+
+                        <div class="controls">
+                            <button @click="connect">Connect</button>
+                            <button @click="disconnect">Disconnect</button>
+                        </div>
+
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="stat-label">Status</div>
+                                <div class="stat-value">{{ status }}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Resolution</div>
+                                <div class="stat-value">{{ resolution }}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Bitrate</div>
+                                <div class="stat-value">{{ bitrate }}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">FPS</div>
+                                <div class="stat-value">{{ fps }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const videoRef = ref(null);
+                const status = ref('disconnected');
+                const resolution = ref('-');
+                const bitrate = ref('-');
+                const fps = ref('-');
+                let pc = null;
+                let statsInterval = null;
+
+                const connect = async () => {
+                    try {
+                        status.value = 'connecting';
+                        pc = new RTCPeerConnection({
+                            iceServers: [
+                                { urls: 'stun:stun.l.google.com:19302' },
+                                { urls: 'stun:stun1.l.google.com:19302' }
+                            ]
+                        });
+
+                        pc.addTransceiver('video', { direction: 'recvonly' });
+                        pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                        pc.ontrack = (e) => {
+                            videoRef.value.srcObject = e.streams[0];
+                        };
+
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+
+                        const res = await fetch('http://192.168.0.108:8889/orange/stream/whep', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/sdp' },
+                            body: offer.sdp
+                        });
+
+                        const answer = await res.text();
+                        await pc.setRemoteDescription(new RTCSessionDescription({
+                            type: 'answer',
+                            sdp: answer
+                        }));
+
+                        status.value = 'connected';
+                        statsInterval = setInterval(async () => {
+                            const stats = await pc.getStats();
+                            stats.forEach(report => {
+                                if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                                    resolution.value = `${report.frameWidth}x${report.frameHeight}`;
+                                    fps.value = report.framesPerSecond || '-';
+                                    bitrate.value = ((report.bytesReceived * 8) / 1000000).toFixed(1) + ' Mbps';
+                                }
+                            });
+                        }, 1000);
+
+                    } catch (error) {
+                        status.value = 'error';
+                        console.error(error);
+                    }
+                };
+
+                const disconnect = () => {
+                    if (pc) {
+                        pc.close();
+                        pc = null;
+                    }
+                    if (statsInterval) clearInterval(statsInterval);
+                    videoRef.value.srcObject = null;
+                    status.value = 'disconnected';
+                    resolution.value = '-';
+                    bitrate.value = '-';
+                    fps.value = '-';
+                };
+
+                onBeforeUnmount(() => {
+                    disconnect();
+                });
+
+                return {
+                    videoRef,
+                    status,
+                    resolution,
+                    bitrate,
+                    fps,
+                    connect,
+                    disconnect
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
