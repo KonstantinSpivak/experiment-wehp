@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hls.js + WebRTC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: #0052a3; }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00bfff;
+            padding-bottom: 20px;
+        }
+        h1 { color: #00bfff; margin-bottom: 5px; }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00bfff;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #00d4ff; }
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 3px solid #00bfff;
+            font-size: 14px;
+        }
+        .info-item { margin: 10px 0; }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #00bfff;
+            color: #1a1a1a;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← На главную</a>
+        <div class="header">
+            <h1>🎿 Hls.js + WebRTC Hybrid</h1>
+            <p style="color: #aaa;">Hls.js для WebRTC с адаптивным bitrate</p>
+        </div>
+
+        <video id="player" controls autoplay muted></video>
+
+        <div class="controls">
+            <button onclick="playWHEP()">Play WHEP</button>
+            <button onclick="playHLS()">Play HLS</button>
+            <button onclick="autoSwitch()">Auto Switch</button>
+            <button onclick="stop()">Stop</button>
+        </div>
+
+        <div class="info">
+            <div class="info-item"><strong>🔗 Source:</strong> <span id="source">None</span></div>
+            <div class="info-item"><strong>📃 Codec:</strong> H.264</div>
+            <div class="info-item"><strong>⚡ Protocol:</strong> <span class="badge" id="protocol">WebRTC/HLS</span></div>
+            <div class="info-item"><strong>🔍 Levels:</strong> <span id="levels">Auto</span></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.9/dist/hls.min.js"></script>
+    <script>
+        const video = document.getElementById('player');
+        let hls = null;
+
+        function playWHEP() {
+            const url = 'http://192.168.0.108:8889/orange/stream/whep';
+            video.src = url;
+            document.getElementById('source').textContent = 'WebRTC WHEP';
+            video.play();
+        }
+
+        function playHLS() {
+            const url = 'http://192.168.0.108:8889/orange/stream/hls.m3u8';
+            
+            if (Hls.isSupported()) {
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    document.getElementById('levels').textContent = hls.levels.length + ' levels';
+                    video.play();
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.play();
+            }
+            document.getElementById('source').textContent = 'HLS M3U8';
+        }
+
+        async function autoSwitch() {
+            try {
+                const whepResponse = await fetch('http://192.168.0.108:8889/orange/stream/whep', {
+                    method: 'HEAD',
+                    signal: AbortSignal.timeout(2000)
+                });
+                if (whepResponse.ok) {
+                    playWHEP();
+                    document.getElementById('source').textContent = 'Auto: WebRTC';
+                } else {
+                    playHLS();
+                    document.getElementById('source').textContent = 'Auto: HLS';
+                }
+            } catch {
+                playHLS();
+                document.getElementById('source').textContent = 'Auto: HLS (fallback)';
+            }
+        }
+
+        function stop() {
+            video.pause();
+            video.src = '';
+            if (hls) hls.destroy();
+            document.getElementById('source').textContent = 'Stopped';
+        }
+    </script>
+</body>
+</html>
