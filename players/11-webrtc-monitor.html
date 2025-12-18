@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC + PeerConnection Monitor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Monaco', monospace;
+            background: #0d1117;
+            color: #e6edf3;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: #2ea043; }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #58a6ff;
+            padding-bottom: 20px;
+        }
+        h1 { color: #58a6ff; margin-bottom: 5px; }
+        .player-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        video {
+            width: 100%;
+            background: #000;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 8px 16px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        button:hover { background: #2ea043; }
+        button:disabled { background: #444; cursor: not-allowed; }
+        .stats-panel {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+        .stat-row {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            padding: 5px 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { color: #8b949e; }
+        .stat-value { color: #79c0ff; font-weight: bold; }
+        .connection-state {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .state-connected { background: #1f6feb; color: #c9d1d9; }
+        .state-connecting { background: #da3633; color: #f85149; }
+        .state-disconnected { background: #30363d; color: #8b949e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← На главную</a>
+        <div class="header">
+            <h1>📉 WebRTC PeerConnection Monitor</h1>
+            <p style="color: #8b949e;">Advanced WebRTC с мониторингом RTCPeerConnection</p>
+        </div>
+
+        <div class="player-row">
+            <div>
+                <video id="video" autoplay muted controls></video>
+                <div class="controls">
+                    <button onclick="connect()">Connect</button>
+                    <button onclick="disconnect()">Disconnect</button>
+                    <button onclick="refreshStats()">Refresh Stats</button>
+                </div>
+            </div>
+            <div>
+                <div class="stats-panel">
+                    <div style="margin-bottom: 10px; font-weight: bold; color: #79c0ff;">
+                        Connection Status <span class="connection-state state-disconnected" id="connState">DISCONNECTED</span>
+                    </div>
+                    
+                    <div class="stat-row">
+                        <div class="stat-label">Connection State:</div>
+                        <div class="stat-value" id="connStatus">-</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">ICE Connection:</div>
+                        <div class="stat-value" id="iceConn">-</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">ICE Gathering:</div>
+                        <div class="stat-value" id="iceGather">-</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">Signaling State:</div>
+                        <div class="stat-value" id="signaling">-</div>
+                    </div>
+                    
+                    <div style="margin-top: 10px; margin-bottom: 10px; font-weight: bold; color: #79c0ff; border-top: 1px solid #21262d; padding-top: 10px;">
+                        Video Metrics
+                    </div>
+                    
+                    <div class="stat-row">
+                        <div class="stat-label">Resolution:</div>
+                        <div class="stat-value" id="resolution">-</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">Bitrate:</div>
+                        <div class="stat-value" id="videoBitrate">-</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">Frame Rate:</div>
+                        <div class="stat-value" id="frameRate">-</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">Jitter:</div>
+                        <div class="stat-value" id="jitter">-</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">Packets Loss:</div>
+                        <div class="stat-value" id="packetLoss">-</div>
+                    </div>
+                    
+                    <div style="margin-top: 10px; margin-bottom: 10px; font-weight: bold; color: #79c0ff; border-top: 1px solid #21262d; padding-top: 10px;">
+                        Network
+                    </div>
+                    
+                    <div class="stat-row">
+                        <div class="stat-label">Remote Candidate:</div>
+                        <div class="stat-value" id="remoteCand" style="font-size: 11px; word-break: break-all;">-</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">Transport:</div>
+                        <div class="stat-value" id="transport">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/webrtc-adapter@8.2.2/out/adapter.js"></script>
+    <script>
+        const WHEP_URL = 'http://192.168.0.108:8889/orange/stream/whep';
+        const video = document.getElementById('video');
+        let pc = null;
+        let statsInterval = null;
+
+        async function connect() {
+            try {
+                updateConnState('CONNECTING');
+                pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
+
+                pc.addTransceiver('video', { direction: 'recvonly' });
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                pc.ontrack = (e) => {
+                    video.srcObject = e.streams[0];
+                };
+
+                pc.onconnectionstatechange = () => {
+                    updateStatus();
+                    if (pc.connectionState === 'connected') {
+                        updateConnState('CONNECTED');
+                        statsInterval = setInterval(updateStats, 1000);
+                    }
+                };
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                const res = await fetch(WHEP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/sdp' },
+                    body: offer.sdp
+                });
+
+                const answer = await res.text();
+                await pc.setRemoteDescription(new RTCSessionDescription({
+                    type: 'answer',
+                    sdp: answer
+                }));
+
+                updateStatus();
+
+            } catch (error) {
+                updateConnState('ERROR');
+                console.error('Error:', error);
+            }
+        }
+
+        function disconnect() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            if (statsInterval) clearInterval(statsInterval);
+            video.srcObject = null;
+            updateConnState('DISCONNECTED');
+            updateStatus();
+        }
+
+        function updateConnState(state) {
+            const elem = document.getElementById('connState');
+            elem.className = 'connection-state state-' + state.toLowerCase();
+            elem.textContent = state;
+        }
+
+        function updateStatus() {
+            if (!pc) return;
+            document.getElementById('connStatus').textContent = pc.connectionState;
+            document.getElementById('iceConn').textContent = pc.iceConnectionState;
+            document.getElementById('iceGather').textContent = pc.iceGatheringState;
+            document.getElementById('signaling').textContent = pc.signalingState;
+        }
+
+        async function updateStats() {
+            if (!pc) return;
+            
+            try {
+                const stats = await pc.getStats();
+                stats.forEach(report => {
+                    if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                        document.getElementById('resolution').textContent = `${report.frameWidth}x${report.frameHeight}`;
+                        document.getElementById('frameRate').textContent = report.framesPerSecond + ' fps';
+                        document.getElementById('videoBitrate').textContent = (report.bytesReceived * 8 / 1000).toFixed(0) + ' kbps';
+                        document.getElementById('jitter').textContent = (report.jitter * 1000).toFixed(1) + ' ms';
+                        document.getElementById('packetLoss').textContent = report.packetsLost + ' packets';
+                    }
+                    if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+                        if (report.remoteCandidateId) {
+                            const remoteCandidate = stats.get(report.remoteCandidateId);
+                            if (remoteCandidate) {
+                                document.getElementById('remoteCand').textContent = `${remoteCandidate.address}:${remoteCandidate.port}`;
+                                document.getElementById('transport').textContent = remoteCandidate.protocol;
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.log('Stats error:', e);
+            }
+        }
+
+        function refreshStats() {
+            updateStats();
+        }
+    </script>
+</body>
+</html>
