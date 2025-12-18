@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shaka Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.5.0/dist/shaka-player.compiled.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: #0052a3; }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e91e63;
+            padding-bottom: 20px;
+        }
+        h1 { color: #e91e63; margin-bottom: 5px; }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #e91e63;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #f50157; }
+        button:disabled { background: #999; cursor: not-allowed; }
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 3px solid #e91e63;
+            font-size: 14px;
+        }
+        .info-item { margin: 10px 0; }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .stat {
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-label { font-size: 11px; color: #aaa; }
+        .stat-value { font-size: 14px; font-weight: bold; color: #e91e63; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← На главную</a>
+        <div class="header">
+            <h1>🌟 Shaka Player - DASH/HLS</h1>
+            <p style="color: #aaa;">Shaka Player - от Google, для DASH и HLS</p>
+        </div>
+
+        <video id="player" controls autoplay muted></video>
+
+        <div class="controls">
+            <button id="loadBtn" onclick="loadStream()">Load Stream</button>
+            <button id="playBtn" onclick="player.play()" disabled>▶ Play</button>
+            <button id="pauseBtn" onclick="player.pause()" disabled>⏸ Pause</button>
+            <button id="muteBtn" onclick="toggleMute()" disabled>Mute</button>
+        </div>
+
+        <div class="info">
+            <div class="info-item"><strong>🔗 Protocol:</strong> <span id="protocol">DASH / HLS</span></div>
+            <div class="info-item"><strong>⚡ Status:</strong> <span id="status">Ready</span></div>
+            <div class="info-item"><strong>🔐 Encryption:</strong> PlayReady, Widevine (if available)</div>
+            
+            <div class="stats-container">
+                <div class="stat">
+                    <div class="stat-label">Bandwidth</div>
+                    <div class="stat-value" id="bandwidth">-</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Buffered</div>
+                    <div class="stat-value" id="buffered">0s</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Video Track</div>
+                    <div class="stat-value" id="videoTrack">-</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Audio Track</div>
+                    <div class="stat-value" id="audioTrack">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        let shakaPlayer = null;
+
+        async function initShaka() {
+            shaka.polyfill.installAll();
+            if (shaka.Player.isBrowserSupported()) {
+                shakaPlayer = new shaka.Player(player);
+                shakaPlayer.addEventListener('error', onPlayerError);
+            } else {
+                document.getElementById('status').textContent = 'Browser not supported';
+            }
+        }
+
+        async function loadStream() {
+            try {
+                document.getElementById('status').textContent = 'Loading...';
+                const manifestUri = 'http://192.168.0.108:8889/orange/stream/dash.mpd';
+                await shakaPlayer.load(manifestUri);
+                document.getElementById('status').textContent = 'Loaded';
+                document.getElementById('playBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('muteBtn').disabled = false;
+                player.play();
+                updateStats();
+            } catch (error) {
+                document.getElementById('status').textContent = 'Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+
+        function toggleMute() {
+            player.muted = !player.muted;
+        }
+
+        function updateStats() {
+            if (!shakaPlayer) return;
+            
+            try {
+                const stats = shakaPlayer.getStats();
+                if (stats.width && stats.height) {
+                    document.getElementById('videoTrack').textContent = `${stats.width}x${stats.height}`;
+                }
+                
+                const buffered = player.buffered.length > 0 ? player.buffered.end(0) - player.currentTime : 0;
+                document.getElementById('buffered').textContent = buffered.toFixed(1) + 's';
+            } catch (e) {
+                console.log('Stats error:', e);
+            }
+        }
+
+        function onPlayerError(event) {
+            console.error('Shaka error:', event.detail);
+            document.getElementById('status').textContent = 'Error';
+        }
+
+        player.addEventListener('play', () => {
+            setInterval(updateStats, 1000);
+        });
+
+        initShaka();
+    </script>
+</body>
+</html>
