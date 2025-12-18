@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dash.js Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: #0052a3; }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #ff9500;
+            padding-bottom: 20px;
+        }
+        h1 { color: #ff9500; margin-bottom: 5px; }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #ff9500;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #ffb040; }
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 3px solid #ff9500;
+            font-size: 14px;
+        }
+        .info-item { margin: 10px 0; }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .metric {
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .metric-value { font-size: 16px; font-weight: bold; color: #ff9500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← На главную</a>
+        <div class="header">
+            <h1>🖊 Dash.js Adaptive Streaming</h1>
+            <p style="color: #aaa;">DASH/MPEG-4 адаптивный потоковый плеер</p>
+        </div>
+
+        <video id="player" controls autoplay muted></video>
+
+        <div class="controls">
+            <button onclick="playDash()">Play DASH</button>
+            <button onclick="updateBitrate('max')">Max Quality</button>
+            <button onclick="updateBitrate('auto')">Auto Quality</button>
+            <button onclick="stop()">Stop</button>
+        </div>
+
+        <div class="info">
+            <div class="info-item"><strong>🔗 Protocol:</strong> DASH/MPEG-DASH</div>
+            <div class="info-item"><strong>📃 Codec:</strong> H.264 + AAC</div>
+            <div class="info-item"><strong>⚡ Status:</strong> <span id="status">Ready</span></div>
+            
+            <div class="metrics">
+                <div class="metric">
+                    <div>Bitrate</div>
+                    <div class="metric-value" id="bitrate">-</div>
+                </div>
+                <div class="metric">
+                    <div>Buffer</div>
+                    <div class="metric-value" id="buffer">-</div>
+                </div>
+                <div class="metric">
+                    <div>Quality</div>
+                    <div class="metric-value" id="quality">Auto</div>
+                </div>
+                <div class="metric">
+                    <div>FPS</div>
+                    <div class="metric-value" id="fps">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+    <script>
+        const video = document.getElementById('player');
+        let player = null;
+
+        function playDash() {
+            const url = 'http://192.168.0.108:8889/orange/stream/dash.mpd';
+            
+            if (!player) {
+                player = dashjs.MediaPlayer().create();
+            }
+            
+            player.initialize(video, url, true);
+            player.attachView(video);
+            
+            player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => {
+                document.getElementById('status').textContent = 'Connected';
+            });
+
+            player.on(dashjs.MediaPlayer.events.METRIC_CHANGED, () => {
+                updateMetrics();
+            });
+        }
+
+        function updateBitrate(mode) {
+            if (!player) return;
+            
+            if (mode === 'max') {
+                const bitrateList = player.getBitrateList();
+                if (bitrateList.length > 0) {
+                    player.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } } } });
+                    player.setQualityFor('video', bitrateList.length - 1);
+                    document.getElementById('quality').textContent = 'Max';
+                }
+            } else if (mode === 'auto') {
+                player.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: true } } } });
+                document.getElementById('quality').textContent = 'Auto';
+            }
+        }
+
+        function updateMetrics() {
+            if (!player) return;
+            
+            try {
+                const bitrateList = player.getBitrateList();
+                const currentBitrate = player.getQualityFor('video');
+                if (bitrateList[currentBitrate]) {
+                    document.getElementById('bitrate').textContent = (bitrateList[currentBitrate].bitrate / 1000).toFixed(0) + ' kbps';
+                }
+            } catch (e) {
+                console.log('Error getting metrics:', e);
+            }
+        }
+
+        function stop() {
+            if (player) {
+                player.destroy();
+                player = null;
+            }
+            video.pause();
+            video.src = '';
+            document.getElementById('status').textContent = 'Stopped';
+        }
+    </script>
+</body>
+</html>
