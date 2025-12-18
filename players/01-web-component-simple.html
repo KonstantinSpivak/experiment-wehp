@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Component Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00bfff;
+            padding-bottom: 20px;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            color: #00bfff;
+        }
+        .description {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        whep-video {
+            width: 100%;
+            max-width: 800px;
+            display: block;
+            margin: 20px auto;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover {
+            background: #0052a3;
+        }
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 3px solid #00bfff;
+        }
+        .info-item {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .code {
+            background: #2a2a2a;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border-left: 2px solid #00bfff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← Вернуться на главную</a>
+
+        <div class="header">
+            <h1>🎥 Web Component Player</h1>
+            <p class="description">Самый простой способ - всего 5 строк кода с Web Component</p>
+        </div>
+
+        <whep-video id="player" src="http://192.168.0.108:8889/orange/stream/whep" autoplay muted controls></whep-video>
+
+        <div class="info">
+            <div class="info-item"><strong>🔗 WHEP URL:</strong> http://192.168.0.108:8889/orange/stream/whep</div>
+            <div class="info-item"><strong>✅ Статус:</strong> <span id="status">Инициализация...</span></div>
+            <div class="info-item"><strong>📊 Тип:</strong> Web Component (Eyevinn)</div>
+            
+            <div class="code">&lt;whep-video src="http://192.168.0.108:8889/orange/stream/whep" autoplay muted controls&gt;&lt;/whep-video&gt;
+&lt;script src="https://unpkg.com/@eyevinn/whep-video-component@latest/dist/whep-video.component.js"&gt;&lt;/script&gt;</div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@eyevinn/whep-video-component@latest/dist/whep-video.component.js"></script>
+    <script>
+        const player = document.getElementById('player');
+        
+        player.addEventListener('play', () => {
+            document.getElementById('status').textContent = '▶️ Воспроизведение';
+        });
+        
+        player.addEventListener('pause', () => {
+            document.getElementById('status').textContent = '⏸️ Пауза';
+        });
+        
+        player.addEventListener('error', (e) => {
+            document.getElementById('status').textContent = '❌ Ошибка: ' + (e.detail || 'Неизвестная ошибка');
+        });
+        
+        setTimeout(() => {
+            document.getElementById('status').textContent = '✅ Готово';
+        }, 2000);
+    </script>
+</body>
+</html>
