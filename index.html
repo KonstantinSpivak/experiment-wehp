@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WHEP Players Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #b0b0b0;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            font-size: 0.95rem;
+            color: #888;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .filter-btn:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.8);
+            color: #00d4ff;
+        }
+
+        .filter-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            animation: slideUp 0.6s ease-out both;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.15s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.25s; }
+        .card:nth-child(5) { animation-delay: 0.3s; }
+        .card:nth-child(6) { animation-delay: 0.35s; }
+        .card:nth-child(7) { animation-delay: 0.4s; }
+        .card:nth-child(8) { animation-delay: 0.45s; }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 212, 255, 0.6);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .card-number {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1a1a2e;
+            font-size: 0.9rem;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+            margin: 0;
+        }
+
+        .card-description {
+            font-size: 0.85rem;
+            color: #b0b0b0;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: #00d4ff;
+            text-transform: uppercase;
+        }
+
+        .card-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            color: #00d4ff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            border: none;
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #00e5ff, #00aaff);
+            transform: scale(1.02);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #b0b0b0;
+            margin-top: 8px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .filter-btn {
+                width: 100%;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 30px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+        }
+
+        .search-box input::placeholder {
+            color: #888;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 40px;
+            margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            transform: translateX(-3px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 WHEP Players</h1>
+            <p class="subtitle">Коллекция рабочих примеров WebRTC плееров</p>
+            <p class="description">
+                Выберите любой вариант реализации WHEP плеера для потокового вещания WebRTC видео. 
+                Все примеры полностью функциональны и готовы к использованию.
+            </p>
+        </header>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Поиск по названию или тегам...">
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterCards('all')">Все</button>
+            <button class="filter-btn" onclick="filterCards('native')">Native</button>
+            <button class="filter-btn" onclick="filterCards('component')">Web Component</button>
+            <button class="filter-btn" onclick="filterCards('framework')">Frameworks</button>
+            <button class="filter-btn" onclick="filterCards('simple')">Простые</button>
+            <button class="filter-btn" onclick="filterCards('advanced')">Продвинутые</button>
+        </div>
+
+        <div class="grid" id="cardsGrid">
+            <!-- Карточки будут вставлены здесь -->
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number">21</div>
+                <div class="stat-label">Рабочих примеров</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">15+</div>
+                <div class="stat-label">Технологий</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Функциональности</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>WHEP Players Collection | WebRTC Video Streaming Examples</p>
+        <p>© 2024 | <a href="https://github.com/KonstantinSpivak/experiment-wehp" style="color: #00d4ff; text-decoration: none;">GitHub Repository</a></p>
+    </footer>
+
+    <script>
+        const players = [
+            {
+                id: 1,
+                title: "Web Component (Simple)",
+                description: "Самый простой способ - всего 5 строк кода с Web Component",
+                file: "players/01-web-component-simple.html",
+                tags: ["web-component", "simple", "5-lines"],
+                category: "component"
+            },
+            {
+                id: 2,
+                title: "Native WebRTC",
+                description: "Базовая реализация на чистом WebRTC с управлением",
+                file: "players/02-native-webrtc.html",
+                tags: ["native", "webrtc", "basic"],
+                category: "native"
+            },
+            {
+                id: 3,
+                title: "Web Component Advanced",
+                description: "Web Component с расширенным управлением и статусом",
+                file: "players/03-web-component-advanced.html",
+                tags: ["web-component", "advanced"],
+                category: "component"
+            },
+            {
+                id: 4,
+                title: "Video.js Basic",
+                description: "Интеграция с популярным плеером Video.js",
+                file: "players/04-videojs-basic.html",
+                tags: ["video.js", "player"],
+                category: "framework"
+            },
+            {
+                id: 5,
+                title: "Video.js с HLS Fallback",
+                description: "Video.js с резервным потоком HLS",
+                file: "players/05-videojs-hls-fallback.html",
+                tags: ["video.js", "fallback", "hls"],
+                category: "framework"
+            },
+            {
+                id: 6,
+                title: "Flussonic Basic",
+                description: "Flussonic WebRTC плеер с базовыми элементами управления",
+                file: "players/06-flussonic-basic.html",
+                tags: ["flussonic", "webrtc"],
+                category: "framework"
+            },
+            {
+                id: 7,
+                title: "Flussonic Advanced",
+                description: "Flussonic с мониторингом битрейта и статистикой",
+                file: "players/07-flussonic-advanced.html",
+                tags: ["flussonic", "monitoring", "stats"],
+                category: "advanced"
+            },
+            {
+                id: 8,
+                title: "Wowza WebRTC",
+                description: "Интеграция с Wowza WebRTC плеером",
+                file: "players/08-wowza-webrtc.html",
+                tags: ["wowza", "webrtc"],
+                category: "framework"
+            },
+            {
+                id: 9,
+                title: "Ant Media Player",
+                description: "Ant Media WebRTC плеер",
+                file: "players/09-ant-media.html",
+                tags: ["ant-media", "webrtc"],
+                category: "framework"
+            },
+            {
+                id: 10,
+                title: "NanoPlayer",
+                description: "NanoPlayer от nanocosmos",
+                file: "players/10-nanoplayer.html",
+                tags: ["nanoplayer", "streaming"],
+                category: "framework"
+            },
+            {
+                id: 11,
+                title: "Ceeblue Video.js",
+                description: "Ceeblue плагин для Video.js",
+                file: "players/11-ceeblue-videojs.html",
+                tags: ["ceeblue", "video.js"],
+                category: "framework"
+            },
+            {
+                id: 12,
+                title: "Native WebRTC Auto-Fallback",
+                description: "Native WebRTC с автоматическим fallback на HLS",
+                file: "players/12-native-webrtc-autofallback.html",
+                tags: ["native", "fallback", "advanced"],
+                category: "advanced"
+            },
+            {
+                id: 13,
+                title: "React Component",
+                description: "React функциональный компонент",
+                file: "players/13-react-component.html",
+                tags: ["react", "framework"],
+                category: "framework"
+            },
+            {
+                id: 14,
+                title: "Vue 3 Component",
+                description: "Vue 3 композиционный API компонент",
+                file: "players/14-vue3-component.html",
+                tags: ["vue3", "framework"],
+                category: "framework"
+            },
+            {
+                id: 15,
+                title: "Angular Component",
+                description: "Angular компонент с TypeScript",
+                file: "players/15-angular-component.html",
+                tags: ["angular", "framework"],
+                category: "framework"
+            },
+            {
+                id: 16,
+                title: "TypeScript Native",
+                description: "Native WebRTC с типами TypeScript",
+                file: "players/16-typescript-native.html",
+                tags: ["typescript", "native"],
+                category: "native"
+            },
+            {
+                id: 17,
+                title: "One-liner Web Component",
+                description: "Супер минимальный one-liner пример",
+                file: "players/17-oneliner.html",
+                tags: ["simple", "minimal"],
+                category: "simple"
+            },
+            {
+                id: 18,
+                title: "Minimalist Native",
+                description: "Минимальная реализация Native WebRTC (10 строк)",
+                file: "players/18-minimalist-native.html",
+                tags: ["simple", "native"],
+                category: "simple"
+            },
+            {
+                id: 19,
+                title: "LiveKit Example",
+                description: "LiveKit SDK интеграция",
+                file: "players/19-livekit.html",
+                tags: ["livekit", "webrtc"],
+                category: "framework"
+            },
+            {
+                id: 20,
+                title: "Agora SDK",
+                description: "Agora Web SDK интеграция",
+                file: "players/20-agora-sdk.html",
+                tags: ["agora", "webrtc"],
+                category: "framework"
+            },
+            {
+                id: 21,
+                title: "PeerJS P2P",
+                description: "PeerJS для P2P подключения",
+                file: "players/21-peerjs.html",
+                tags: ["peerjs", "p2p"],
+                category: "framework"
+            }
+        ];
+
+        function renderCards(cardsToShow = players) {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '';
+
+            if (cardsToShow.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">Результатов не найдено</div>';
+                return;
+            }
+
+            cardsToShow.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <div class="card-number">#${player.id}</div>
+                        <h3 class="card-title">${player.title}</h3>
+                    </div>
+                    <p class="card-description">${player.description}</p>
+                    <div class="card-tags">
+                        ${player.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                    <div class="card-footer">
+                        <a href="${player.file}" class="btn btn-primary">Открыть плеер</a>
+                        <a href="${player.file}" download class="btn">Скачать</a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCards(category) {
+            const activeBtn = document.querySelector('.filter-btn.active');
+            activeBtn.classList.remove('active');
+            event.target.classList.add('active');
+
+            if (category === 'all') {
+                renderCards(players);
+            } else {
+                const filtered = players.filter(p => p.category === category);
+                renderCards(filtered);
+            }
+        }
+
+        function searchCards() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = players.filter(p => 
+                p.title.toLowerCase().includes(searchTerm) ||
+                p.description.toLowerCase().includes(searchTerm) ||
+                p.tags.some(tag => tag.includes(searchTerm))
+            );
+            renderCards(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', searchCards);
+
+        // Инициализация при загрузке
+        renderCards();
+    </script>
+</body>
+</html>
