@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flussonic WebRTC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 100%);
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: #0052a3; }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00bfff;
+            padding-bottom: 20px;
+        }
+        h1 { color: #00bfff; margin-bottom: 5px; }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00bfff;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #00d4ff; }
+        button:disabled { background: #666; cursor: not-allowed; }
+        .stats {
+            background: rgba(0, 191, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 3px solid #00bfff;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-label { font-size: 12px; color: #aaa; }
+        .stat-value { font-size: 16px; font-weight: bold; color: #00bfff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← На главную</a>
+        <div class="header">
+            <h1>🎸 Flussonic WebRTC Player</h1>
+            <p style="color: #aaa;">Flussonic WebRTC стриминг плеер</p>
+        </div>
+
+        <video id="player" controls autoplay muted></video>
+
+        <div class="controls">
+            <button onclick="play()">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="stop()">⏹ Stop</button>
+            <button onclick="toggleMute()">Mute/Unmute</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Status</div>
+                <div class="stat-value" id="status">Ready</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Bitrate</div>
+                <div class="stat-value" id="bitrate">- Kbps</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Resolution</div>
+                <div class="stat-value" id="resolution">- x -</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Connection</div>
+                <div class="stat-value" id="connection">Offline</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@flussonic/flussonic-webrtc-player@latest/dist/flussonic-webrtc-player.min.js"></script>
+    <script>
+        let player = null;
+        const videoElement = document.getElementById('player');
+
+        async function initPlayer() {
+            try {
+                player = new FlussonicWebRTCPlayer(
+                    videoElement,
+                    'http://192.168.0.108:8889/orange/stream/whep',
+                    { autoplay: true },
+                    true
+                );
+                player.play();
+                updateStatus('Connected');
+                updateConnection('Online');
+                setInterval(updateStats, 1000);
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus('Error');
+            }
+        }
+
+        function play() {
+            if (player) player.play();
+        }
+
+        function pause() {
+            if (player) player.pause();
+        }
+
+        function stop() {
+            if (player) player.stop();
+        }
+
+        function toggleMute() {
+            videoElement.muted = !videoElement.muted;
+        }
+
+        function updateStatus(msg) {
+            document.getElementById('status').textContent = msg;
+        }
+
+        function updateConnection(msg) {
+            document.getElementById('connection').textContent = msg;
+        }
+
+        function updateStats() {
+            const width = videoElement.videoWidth;
+            const height = videoElement.videoHeight;
+            if (width && height) {
+                document.getElementById('resolution').textContent = `${width} x ${height}`;
+            }
+        }
+
+        window.addEventListener('load', initPlayer);
+    </script>
+</body>
+</html>
