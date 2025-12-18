@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Native WebRTC Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/webrtc-adapter@8.2.2/out/adapter.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00bfff;
+            padding-bottom: 20px;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            color: #00bfff;
+        }
+        .description {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover {
+            background: #0052a3;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00bfff;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #00d4ff;
+            transform: scale(1.05);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: none;
+        }
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 3px solid #00bfff;
+        }
+        .info-item {
+            margin: 10px 0;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #00bfff;
+            color: #1a1a1a;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-badge.error {
+            background: #ff6b6b;
+        }
+        .status-badge.connecting {
+            background: #ffa500;
+        }
+        .code {
+            background: #2a2a2a;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border-left: 2px solid #00bfff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← Вернуться на главную</a>
+
+        <div class="header">
+            <h1>📹 Native WebRTC Player</h1>
+            <p class="description">Базовая реализация на чистом WebRTC с управлением подключением</p>
+        </div>
+
+        <video id="video" autoplay muted controls></video>
+
+        <div class="controls">
+            <button onclick="connect()" id="connectBtn">🎯 Подключиться</button>
+            <button onclick="disconnect()" id="disconnectBtn" disabled>❌ Отключиться</button>
+        </div>
+
+        <div class="info">
+            <div class="info-item">
+                <span><strong>🔗 WHEP URL:</strong></span>
+                <span>http://192.168.0.108:8889/orange/stream/whep</span>
+            </div>
+            <div class="info-item">
+                <span><strong>⚡ Статус:</strong></span>
+                <span class="status-badge" id="status">Отключен</span>
+            </div>
+            <div class="info-item">
+                <span><strong>🔊 Звук:</strong></span>
+                <span id="audioStatus">Отсутствует</span>
+            </div>
+            <div class="info-item">
+                <span><strong>📊 Состояние подключения:</strong></span>
+                <span id="connectionState">-</span>
+            </div>
+            <div class="code">const pc = new RTCPeerConnection(...);
+pc.addTransceiver('video', { direction: 'recvonly' });
+pc.addTransceiver('audio', { direction: 'recvonly' });</div>
+        </div>
+    </div>
+
+    <script>
+        const WHEP_URL = 'http://192.168.0.108:8889/orange/stream/whep';
+        let pc = null;
+
+        async function connect() {
+            try {
+                setStatus('Подключение...', 'connecting');
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+
+                pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
+
+                pc.addTransceiver('video', { direction: 'recvonly' });
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                pc.ontrack = (e) => {
+                    console.log('Track received:', e.track.kind);
+                    document.getElementById('video').srcObject = e.streams[0];
+                    if (e.track.kind === 'audio') {
+                        document.getElementById('audioStatus').textContent = '✓ Присутствует';
+                    }
+                };
+
+                pc.onconnectionstatechange = () => {
+                    document.getElementById('connectionState').textContent = pc.connectionState;
+                    console.log('Connection state:', pc.connectionState);
+                    if (pc.connectionState === 'connected') {
+                        setStatus('Подключено', '');
+                    }
+                };
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                const res = await fetch(WHEP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/sdp' },
+                    body: offer.sdp
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const answer = await res.text();
+                await pc.setRemoteDescription(new RTCSessionDescription({
+                    type: 'answer',
+                    sdp: answer
+                }));
+
+            } catch (e) {
+                setStatus('Ошибка: ' + e.message, 'error');
+                console.error(e);
+                disconnect();
+            }
+        }
+
+        function disconnect() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            document.getElementById('video').srcObject = null;
+            document.getElementById('audioStatus').textContent = 'Отсутствует';
+            document.getElementById('connectionState').textContent = '-';
+            setStatus('Отключен', '');
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('disconnectBtn').disabled = true;
+        }
+
+        function setStatus(msg, type) {
+            const badge = document.getElementById('status');
+            badge.textContent = msg;
+            badge.className = 'status-badge' + (type ? ' ' + type : '');
+        }
+    </script>
+</body>
+</html>
