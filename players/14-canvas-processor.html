@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas-based Video Processor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.3);
+            color: white;
+            border: 1px solid white;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: rgba(0,0,0,0.5); }
+        .card {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 { margin-bottom: 10px; }
+        .video-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        video, canvas {
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        canvas { display: none; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        button:hover { background: rgba(255,255,255,0.3); }
+        .filters {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .filter-btn {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .filter-btn:hover { background: rgba(255,255,255,0.2); }
+        .filter-btn.active { background: rgba(255,255,255,0.4); border-color: white; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .stat {
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← На главную</a>
+        <div class="card">
+            <h1>🍾 Canvas Video Processing</h1>
+            <p style="opacity: 0.8; margin-bottom: 20px;">WebRTC с Canvas-базед видео обработкой</p>
+
+            <div class="video-container">
+                <div>
+                    <h3 style="font-size: 14px; margin-bottom: 8px;">Original</h3>
+                    <video id="video" autoplay muted></video>
+                </div>
+                <div>
+                    <h3 style="font-size: 14px; margin-bottom: 8px;">Processed</h3>
+                    <canvas id="canvas"></canvas>
+                    <video id="canvasVideo" autoplay muted></video>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button onclick="connect()">Connect</button>
+                <button onclick="disconnect()">Disconnect</button>
+                <button onclick="toggleProcessing()">Toggle Processing</button>
+            </div>
+
+            <div class="filters" id="filterButtons" style="display: none;">
+                <button class="filter-btn active" onclick="setFilter('none')">None</button>
+                <button class="filter-btn" onclick="setFilter('grayscale')">Grayscale</button>
+                <button class="filter-btn" onclick="setFilter('sepia')">Sepia</button>
+                <button class="filter-btn" onclick="setFilter('invert')">Invert</button>
+                <button class="filter-btn" onclick="setFilter('blur')">Blur</button>
+                <button class="filter-btn" onclick="setFilter('brightness')">Bright</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div style="opacity: 0.8; margin-bottom: 3px;">Status</div>
+                    <div style="font-weight: bold;" id="status">Disconnected</div>
+                </div>
+                <div class="stat">
+                    <div style="opacity: 0.8; margin-bottom: 3px;">Processing</div>
+                    <div style="font-weight: bold;" id="processing">OFF</div>
+                </div>
+                <div class="stat">
+                    <div style="opacity: 0.8; margin-bottom: 3px;">FPS</div>
+                    <div style="font-weight: bold;" id="fps">0</div>
+                </div>
+                <div class="stat">
+                    <div style="opacity: 0.8; margin-bottom: 3px;">Filter</div>
+                    <div style="font-weight: bold;" id="filterName">None</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/webrtc-adapter@8.2.2/out/adapter.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const canvasVideo = document.getElementById('canvasVideo');
+        const ctx = canvas.getContext('2d');
+        let pc = null;
+        let processing = false;
+        let currentFilter = 'none';
+        let frameCount = 0;
+        let lastFpsTime = Date.now();
+
+        async function connect() {
+            try {
+                document.getElementById('status').textContent = 'Connecting...';
+                pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                pc.addTransceiver('video', { direction: 'recvonly' });
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                pc.ontrack = (e) => {
+                    video.srcObject = e.streams[0];
+                    canvasVideo.srcObject = e.streams[0];
+                    document.getElementById('status').textContent = 'Connected';
+                    
+                    if (processing) {
+                        startCanvasProcessing();
+                    }
+                };
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                const res = await fetch('http://192.168.0.108:8889/orange/stream/whep', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/sdp' },
+                    body: offer.sdp
+                });
+
+                const answer = await res.text();
+                await pc.setRemoteDescription(new RTCSessionDescription({
+                    type: 'answer',
+                    sdp: answer
+                }));
+
+            } catch (error) {
+                document.getElementById('status').textContent = 'Error';
+                console.error(error);
+            }
+        }
+
+        function disconnect() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            video.srcObject = null;
+            document.getElementById('status').textContent = 'Disconnected';
+            processing = false;
+            document.getElementById('processing').textContent = 'OFF';
+        }
+
+        function toggleProcessing() {
+            processing = !processing;
+            document.getElementById('processing').textContent = processing ? 'ON' : 'OFF';
+            document.getElementById('filterButtons').style.display = processing ? 'flex' : 'none';
+            
+            if (processing && video.srcObject) {
+                startCanvasProcessing();
+            }
+        }
+
+        function setFilter(name) {
+            currentFilter = name;
+            document.getElementById('filterName').textContent = name.toUpperCase();
+            
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function startCanvasProcessing() {
+            if (!processing || !video.srcObject) return;
+
+            requestAnimationFrame(() => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                ctx.drawImage(video, 0, 0);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                switch(currentFilter) {
+                    case 'grayscale':
+                        for (let i = 0; i < data.length; i += 4) {
+                            const gray = data[i] * 0.3 + data[i+1] * 0.6 + data[i+2] * 0.1;
+                            data[i] = data[i+1] = data[i+2] = gray;
+                        }
+                        break;
+                    case 'sepia':
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i], g = data[i+1], b = data[i+2];
+                            data[i] = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
+                            data[i+1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
+                            data[i+2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
+                        }
+                        break;
+                    case 'invert':
+                        for (let i = 0; i < data.length; i += 4) {
+                            data[i] = 255 - data[i];
+                            data[i+1] = 255 - data[i+1];
+                            data[i+2] = 255 - data[i+2];
+                        }
+                        break;
+                    case 'brightness':
+                        for (let i = 0; i < data.length; i += 4) {
+                            data[i] = Math.min(255, data[i] * 1.2);
+                            data[i+1] = Math.min(255, data[i+1] * 1.2);
+                            data[i+2] = Math.min(255, data[i+2] * 1.2);
+                        }
+                        break;
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                frameCount++;
+                
+                const now = Date.now();
+                if (now - lastFpsTime > 1000) {
+                    document.getElementById('fps').textContent = frameCount;
+                    frameCount = 0;
+                    lastFpsTime = now;
+                }
+                
+                startCanvasProcessing();
+            });
+        }
+    </script>
+</body>
+</html>
