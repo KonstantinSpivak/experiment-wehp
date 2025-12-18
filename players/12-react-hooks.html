@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Hook Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.3/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid white;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 { margin-bottom: 10px; }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            border-radius: 8px;
+            margin: 20px auto;
+            display: block;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.3);
+            color: white;
+            border: 1px solid white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status-box {
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .status-item:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        function WHEPPlayer() {
+            const videoRef = useRef(null);
+            const [status, setStatus] = useState('disconnected');
+            const [resolution, setResolution] = useState('-');
+            const [bitrate, setBitrate] = useState('-');
+            const pcRef = useRef(null);
+
+            const connect = async () => {
+                try {
+                    setStatus('connecting');
+                    const pc = new RTCPeerConnection({
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' }
+                        ]
+                    });
+
+                    pc.addTransceiver('video', { direction: 'recvonly' });
+                    pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                    pc.ontrack = (e) => {
+                        videoRef.current.srcObject = e.streams[0];
+                    };
+
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+
+                    const res = await fetch('http://192.168.0.108:8889/orange/stream/whep', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/sdp' },
+                        body: offer.sdp
+                    });
+
+                    const answer = await res.text();
+                    await pc.setRemoteDescription(new RTCSessionDescription({
+                        type: 'answer',
+                        sdp: answer
+                    }));
+
+                    pcRef.current = pc;
+                    setStatus('connected');
+
+                    const statsInterval = setInterval(async () => {
+                        const stats = await pc.getStats();
+                        stats.forEach(report => {
+                            if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                                setResolution(`${report.frameWidth}x${report.frameHeight}`);
+                                setBitrate(((report.bytesReceived * 8) / 1000000).toFixed(1) + ' Mbps');
+                            }
+                        });
+                    }, 1000);
+
+                    pc.onconnectionstatechange = () => {
+                        if (pc.connectionState === 'failed') {
+                            clearInterval(statsInterval);
+                            setStatus('disconnected');
+                        }
+                    };
+
+                } catch (error) {
+                    setStatus('error: ' + error.message);
+                    console.error(error);
+                }
+            };
+
+            const disconnect = () => {
+                if (pcRef.current) {
+                    pcRef.current.close();
+                    pcRef.current = null;
+                }
+                videoRef.current.srcObject = null;
+                setStatus('disconnected');
+                setResolution('-');
+                setBitrate('-');
+            };
+
+            return (
+                <div className="container">
+                    <a href="../index.html" className="back-btn">← На главную</a>
+                    <div className="card">
+                        <h1>⚛️ React Hook Player</h1>
+                        <p style={{color: '#ddd', marginBottom: '20px'}}>WebRTC WHEP плеер на React с hooks</p>
+
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            muted
+                            controls
+                            style={{
+                                width: '100%',
+                                maxWidth: '800px',
+                                background: '#000',
+                                borderRadius: '8px',
+                                margin: '20px auto',
+                                display: 'block'
+                            }}
+                        />
+
+                        <div className="controls">
+                            <button onClick={connect}>Connect</button>
+                            <button onClick={disconnect}>Disconnect</button>
+                        </div>
+
+                        <div className="status-box">
+                            <div className="status-item">
+                                <span>Status:</span>
+                                <span style={{fontWeight: 'bold'}}>{status}</span>
+                            </div>
+                            <div className="status-item">
+                                <span>Resolution:</span>
+                                <span style={{fontWeight: 'bold'}}>{resolution}</span>
+                            </div>
+                            <div className="status-item">
+                                <span>Bitrate:</span>
+                                <span style={{fontWeight: 'bold'}}>{bitrate}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<WHEPPlayer />, document.getElementById('root'));
+    </script>
+</body>
+</html>
