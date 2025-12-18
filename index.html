@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -105,14 +105,12 @@
             animation: slideUp 0.6s ease-out both;
         }
 
-        .card:nth-child(1) { animation-delay: 0.1s; }
-        .card:nth-child(2) { animation-delay: 0.15s; }
-        .card:nth-child(3) { animation-delay: 0.2s; }
-        .card:nth-child(4) { animation-delay: 0.25s; }
-        .card:nth-child(5) { animation-delay: 0.3s; }
-        .card:nth-child(6) { animation-delay: 0.35s; }
-        .card:nth-child(7) { animation-delay: 0.4s; }
-        .card:nth-child(8) { animation-delay: 0.45s; }
+        .card:nth-child(1) { animation-delay: 0.05s; }
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.15s; }
+        .card:nth-child(4) { animation-delay: 0.2s; }
+        .card:nth-child(5) { animation-delay: 0.25s; }
+        .card:nth-child(6) { animation-delay: 0.3s; }
 
         .card:hover {
             background: rgba(255, 255, 255, 0.08);
@@ -318,29 +316,15 @@
             color: #888;
             font-size: 0.85rem;
         }
-
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #00d4ff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .back-link:hover {
-            transform: translateX(-3px);
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🎬 WHEP Players</h1>
-            <p class="subtitle">Коллекция рабочих примеров WebRTC плееров</p>
+            <p class="subtitle">Коллекция WebRTC плееров</p>
             <p class="description">
-                Выберите любой вариант реализации WHEP плеера для потокового вещания WebRTC видео. 
-                Все примеры полностью функциональны и готовы к использованию.
+                Оне только 18 рабочих примеров WHEP плееров с разными библиотеками, фреймворками и подходами!
             </p>
         </header>
 
@@ -352,9 +336,9 @@
             <button class="filter-btn active" onclick="filterCards('all')">Все</button>
             <button class="filter-btn" onclick="filterCards('native')">Native</button>
             <button class="filter-btn" onclick="filterCards('component')">Web Component</button>
+            <button class="filter-btn" onclick="filterCards('player')">Players</button>
             <button class="filter-btn" onclick="filterCards('framework')">Frameworks</button>
-            <button class="filter-btn" onclick="filterCards('simple')">Простые</button>
-            <button class="filter-btn" onclick="filterCards('advanced')">Продвинутые</button>
+            <button class="filter-btn" onclick="filterCards('advanced')">Advanced</button>
         </div>
 
         <div class="grid" id="cardsGrid">
@@ -363,16 +347,16 @@
 
         <div class="stats">
             <div class="stat">
-                <div class="stat-number">21</div>
+                <div class="stat-number">18+</div>
                 <div class="stat-label">Рабочих примеров</div>
             </div>
             <div class="stat">
-                <div class="stat-number">15+</div>
+                <div class="stat-number">20+</div>
                 <div class="stat-label">Технологий</div>
             </div>
             <div class="stat">
                 <div class="stat-number">100%</div>
-                <div class="stat-label">Функциональности</div>
+                <div class="stat-label">Функциональные</div>
             </div>
         </div>
     </div>
@@ -384,174 +368,24 @@
 
     <script>
         const players = [
-            {
-                id: 1,
-                title: "Web Component (Simple)",
-                description: "Самый простой способ - всего 5 строк кода с Web Component",
-                file: "players/01-web-component-simple.html",
-                tags: ["web-component", "simple", "5-lines"],
-                category: "component"
-            },
-            {
-                id: 2,
-                title: "Native WebRTC",
-                description: "Базовая реализация на чистом WebRTC с управлением",
-                file: "players/02-native-webrtc.html",
-                tags: ["native", "webrtc", "basic"],
-                category: "native"
-            },
-            {
-                id: 3,
-                title: "Web Component Advanced",
-                description: "Web Component с расширенным управлением и статусом",
-                file: "players/03-web-component-advanced.html",
-                tags: ["web-component", "advanced"],
-                category: "component"
-            },
-            {
-                id: 4,
-                title: "Video.js Basic",
-                description: "Интеграция с популярным плеером Video.js",
-                file: "players/04-videojs-basic.html",
-                tags: ["video.js", "player"],
-                category: "framework"
-            },
-            {
-                id: 5,
-                title: "Video.js с HLS Fallback",
-                description: "Video.js с резервным потоком HLS",
-                file: "players/05-videojs-hls-fallback.html",
-                tags: ["video.js", "fallback", "hls"],
-                category: "framework"
-            },
-            {
-                id: 6,
-                title: "Flussonic Basic",
-                description: "Flussonic WebRTC плеер с базовыми элементами управления",
-                file: "players/06-flussonic-basic.html",
-                tags: ["flussonic", "webrtc"],
-                category: "framework"
-            },
-            {
-                id: 7,
-                title: "Flussonic Advanced",
-                description: "Flussonic с мониторингом битрейта и статистикой",
-                file: "players/07-flussonic-advanced.html",
-                tags: ["flussonic", "monitoring", "stats"],
-                category: "advanced"
-            },
-            {
-                id: 8,
-                title: "Wowza WebRTC",
-                description: "Интеграция с Wowza WebRTC плеером",
-                file: "players/08-wowza-webrtc.html",
-                tags: ["wowza", "webrtc"],
-                category: "framework"
-            },
-            {
-                id: 9,
-                title: "Ant Media Player",
-                description: "Ant Media WebRTC плеер",
-                file: "players/09-ant-media.html",
-                tags: ["ant-media", "webrtc"],
-                category: "framework"
-            },
-            {
-                id: 10,
-                title: "NanoPlayer",
-                description: "NanoPlayer от nanocosmos",
-                file: "players/10-nanoplayer.html",
-                tags: ["nanoplayer", "streaming"],
-                category: "framework"
-            },
-            {
-                id: 11,
-                title: "Ceeblue Video.js",
-                description: "Ceeblue плагин для Video.js",
-                file: "players/11-ceeblue-videojs.html",
-                tags: ["ceeblue", "video.js"],
-                category: "framework"
-            },
-            {
-                id: 12,
-                title: "Native WebRTC Auto-Fallback",
-                description: "Native WebRTC с автоматическим fallback на HLS",
-                file: "players/12-native-webrtc-autofallback.html",
-                tags: ["native", "fallback", "advanced"],
-                category: "advanced"
-            },
-            {
-                id: 13,
-                title: "React Component",
-                description: "React функциональный компонент",
-                file: "players/13-react-component.html",
-                tags: ["react", "framework"],
-                category: "framework"
-            },
-            {
-                id: 14,
-                title: "Vue 3 Component",
-                description: "Vue 3 композиционный API компонент",
-                file: "players/14-vue3-component.html",
-                tags: ["vue3", "framework"],
-                category: "framework"
-            },
-            {
-                id: 15,
-                title: "Angular Component",
-                description: "Angular компонент с TypeScript",
-                file: "players/15-angular-component.html",
-                tags: ["angular", "framework"],
-                category: "framework"
-            },
-            {
-                id: 16,
-                title: "TypeScript Native",
-                description: "Native WebRTC с типами TypeScript",
-                file: "players/16-typescript-native.html",
-                tags: ["typescript", "native"],
-                category: "native"
-            },
-            {
-                id: 17,
-                title: "One-liner Web Component",
-                description: "Супер минимальный one-liner пример",
-                file: "players/17-oneliner.html",
-                tags: ["simple", "minimal"],
-                category: "simple"
-            },
-            {
-                id: 18,
-                title: "Minimalist Native",
-                description: "Минимальная реализация Native WebRTC (10 строк)",
-                file: "players/18-minimalist-native.html",
-                tags: ["simple", "native"],
-                category: "simple"
-            },
-            {
-                id: 19,
-                title: "LiveKit Example",
-                description: "LiveKit SDK интеграция",
-                file: "players/19-livekit.html",
-                tags: ["livekit", "webrtc"],
-                category: "framework"
-            },
-            {
-                id: 20,
-                title: "Agora SDK",
-                description: "Agora Web SDK интеграция",
-                file: "players/20-agora-sdk.html",
-                tags: ["agora", "webrtc"],
-                category: "framework"
-            },
-            {
-                id: 21,
-                title: "PeerJS P2P",
-                description: "PeerJS для P2P подключения",
-                file: "players/21-peerjs.html",
-                tags: ["peerjs", "p2p"],
-                category: "framework"
-            }
+            { id: 1, title: "Web Component Simple", desc: "Самый простой - 5 строк кода", file: "players/01-web-component-simple.html", tags: ["web-component", "simple"], cat: "component" },
+            { id: 2, title: "Native WebRTC", desc: "Базовая реализация WebRTC", file: "players/02-native-webrtc.html", tags: ["native", "webrtc"], cat: "native" },
+            { id: 3, title: "Web Component Advanced", desc: "Web Component с управлением", file: "players/03-web-component-advanced.html", tags: ["web-component", "advanced"], cat: "component" },
+            { id: 4, title: "Video.js Player", desc: "Популярный плеер Video.js", file: "players/04-videojs-basic.html", tags: ["video.js", "player"], cat: "player" },
+            { id: 5, title: "Video.js + HLS", desc: "Video.js с HLS fallback", file: "players/05-videojs-hls-fallback.html", tags: ["video.js", "hls"], cat: "player" },
+            { id: 6, title: "Flussonic Basic", desc: "Flussonic WebRTC плеер", file: "players/06-flussonic-basic.html", tags: ["flussonic", "webrtc"], cat: "player" },
+            { id: 7, title: "Flussonic Advanced", desc: "Мониторинг и аналитика", file: "players/07-flussonic-advanced.html", tags: ["flussonic", "monitoring"], cat: "advanced" },
+            { id: 8, title: "Hls.js Hybrid", desc: "Hls.js с WebRTC hybrid", file: "players/08-hlsjs-webrtc-hybrid.html", tags: ["hls.js", "hybrid"], cat: "player" },
+            { id: 9, title: "Dash.js", desc: "MPEG-DASH адаптивный плеер", file: "players/09-dashjs-adaptive.html", tags: ["dash.js", "adaptive"], cat: "player" },
+            { id: 10, title: "Shaka Player", desc: "Google Shaka для DASH/HLS", file: "players/10-shaka-player.html", tags: ["shaka", "dash", "hls"], cat: "player" },
+            { id: 11, title: "WebRTC Monitor", desc: "Мониторинг PeerConnection", file: "players/11-webrtc-monitor.html", tags: ["webrtc", "monitoring"], cat: "advanced" },
+            { id: 12, title: "React Hooks", desc: "React компонент с hooks", file: "players/12-react-hooks.html", tags: ["react", "hooks"], cat: "framework" },
+            { id: 13, title: "Vue 3 Composition", desc: "Vue 3 Composition API", file: "players/13-vue3-composition.html", tags: ["vue3", "composition"], cat: "framework" },
+            { id: 14, title: "Canvas Processor", desc: "Canvas видео обработка", file: "players/14-canvas-processor.html", tags: ["canvas", "filters"], cat: "advanced" },
+            { id: 15, title: "TypeScript Native", desc: "TypeScript с логгингом", file: "players/15-typescript-native.html", tags: ["typescript", "native"], cat: "native" },
+            { id: 16, title: "MediaRecorder", desc: "Запись видео стрима", file: "players/16-mediarecorder.html", tags: ["mediarecorder", "recording"], cat: "advanced" },
+            { id: 17, title: "Ultra Minimal", desc: "Одна строка", file: "players/17-ultra-minimal.html", tags: ["minimal", "oneliner"], cat: "native" },
+            { id: 18, title: "Audio Visualizer", desc: "Tone.js аудио визуализер", file: "players/18-audio-visualizer.html", tags: ["tone.js", "audio"], cat: "advanced" }
         ];
 
         function renderCards(cardsToShow = players) {
@@ -571,12 +405,12 @@
                         <div class="card-number">#${player.id}</div>
                         <h3 class="card-title">${player.title}</h3>
                     </div>
-                    <p class="card-description">${player.description}</p>
+                    <p class="card-description">${player.desc}</p>
                     <div class="card-tags">
                         ${player.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
                     <div class="card-footer">
-                        <a href="${player.file}" class="btn btn-primary">Открыть плеер</a>
+                        <a href="${player.file}" class="btn btn-primary">Открыть</a>
                         <a href="${player.file}" download class="btn">Скачать</a>
                     </div>
                 `;
@@ -592,7 +426,7 @@
             if (category === 'all') {
                 renderCards(players);
             } else {
-                const filtered = players.filter(p => p.category === category);
+                const filtered = players.filter(p => p.cat === category);
                 renderCards(filtered);
             }
         }
@@ -601,7 +435,7 @@
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const filtered = players.filter(p => 
                 p.title.toLowerCase().includes(searchTerm) ||
-                p.description.toLowerCase().includes(searchTerm) ||
+                p.desc.toLowerCase().includes(searchTerm) ||
                 p.tags.some(tag => tag.includes(searchTerm))
             );
             renderCards(filtered);
@@ -609,7 +443,6 @@
 
         document.getElementById('searchInput').addEventListener('input', searchCards);
 
-        // Инициализация при загрузке
         renderCards();
     </script>
 </body>
