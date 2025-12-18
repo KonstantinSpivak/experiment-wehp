@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeScript Native WebRTC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cascadia Code', monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: #2ea043; }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 20px;
+        }
+        h1 { color: #79c0ff; margin-bottom: 5px; }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #0d1117;
+            margin: 20px auto;
+            display: block;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+        .controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 8px 16px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        button:hover { background: #2ea043; }
+        button:disabled { background: #444; cursor: not-allowed; }
+        .info-panel {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+        }
+        .info-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            padding: 8px 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #8b949e; }
+        .info-value { color: #79c0ff; font-weight: bold; }
+        .log-output {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+        .log-entry { color: #79c0ff; margin: 2px 0; }
+        .log-error { color: #f85149; }
+        .log-success { color: #3fb950; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← На главную</a>
+        <div class="header">
+            <h1>// TypeScript Native WebRTC</h1>
+            <p style="color: #8b949e; font-size: 12px; margin-top: 5px;">Native WebRTC с TypeScript типами</p>
+        </div>
+
+        <video id="video" autoplay muted controls></video>
+
+        <div class="controls">
+            <button onclick="app.connect()">Connect</button>
+            <button onclick="app.disconnect()">Disconnect</button>
+            <button onclick="app.getStats()">Get Stats</button>
+            <button onclick="app.toggleLog()">Toggle Log</button>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-row">
+                <div class="info-label">Connection State:</div>
+                <div class="info-value" id="connState">disconnected</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">ICE Connection:</div>
+                <div class="info-value" id="iceState">-</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">ICE Gathering:</div>
+                <div class="info-value" id="iceGather">-</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Video Resolution:</div>
+                <div class="info-value" id="resolution">-</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Bitrate:</div>
+                <div class="info-value" id="bitrate">-</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Frame Rate:</div>
+                <div class="info-value" id="fps">-</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Latency:</div>
+                <div class="info-value" id="latency">-</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">WHEP URL:</div>
+                <div class="info-value" style="font-size: 11px; word-break: break-all;">192.168.0.108:8889/orange/stream/whep</div>
+            </div>
+        </div>
+
+        <div class="log-output" id="logOutput" style="display: none;">
+            <div class="log-entry">> WebRTC Logger initialized</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/webrtc-adapter@8.2.2/out/adapter.js"></script>
+    <script>
+        // TypeScript-like interface simulation
+        class WebRTCPlayer {
+            constructor(videoElementId) {
+                this.video = document.getElementById(videoElementId);
+                this.pc = null;
+                this.whepUrl = 'http://192.168.0.108:8889/orange/stream/whep';
+                this.statsInterval = null;
+                this.logs = [];
+                this.logEnabled = false;
+                this.log('WebRTC Player initialized');
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = `[${timestamp}] ${message}`;
+                this.logs.push(logEntry);
+                console.log(logEntry);
+                
+                if (this.logEnabled) {
+                    const logOutput = document.getElementById('logOutput');
+                    const div = document.createElement('div');
+                    div.className = `log-entry log-${type}`;
+                    div.textContent = logEntry;
+                    logOutput.appendChild(div);
+                    logOutput.scrollTop = logOutput.scrollHeight;
+                }
+            }
+
+            toggleLog() {
+                this.logEnabled = !this.logEnabled;
+                document.getElementById('logOutput').style.display = this.logEnabled ? 'block' : 'none';
+                this.log('Log ' + (this.logEnabled ? 'enabled' : 'disabled'));
+            }
+
+            async connect() {
+                try {
+                    this.log('Connecting to WHEP server...', 'info');
+                    this.updateState('connecting');
+
+                    this.pc = new RTCPeerConnection({
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' }
+                        ]
+                    });
+
+                    this.pc.addTransceiver('video', { direction: 'recvonly' });
+                    this.pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                    this.pc.ontrack = (event) => {
+                        this.log(`Track received: ${event.track.kind}`);
+                        this.video.srcObject = event.streams[0];
+                    };
+
+                    this.pc.onconnectionstatechange = () => {
+                        this.log(`Connection state: ${this.pc.connectionState}`);
+                        this.updateState(this.pc.connectionState);
+                        
+                        if (this.pc.connectionState === 'connected') {
+                            this.statsInterval = setInterval(() => this.updateStats(), 1000);
+                        }
+                    };
+
+                    const offer = await this.pc.createOffer();
+                    await this.pc.setLocalDescription(offer);
+                    this.log('Offer created and set as local description');
+
+                    const res = await fetch(this.whepUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/sdp' },
+                        body: offer.sdp
+                    });
+
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                    const answer = await res.text();
+                    await this.pc.setRemoteDescription(new RTCSessionDescription({
+                        type: 'answer',
+                        sdp: answer
+                    }));
+                    this.log('Answer received and set as remote description', 'success');
+
+                } catch (error) {
+                    this.log(`Error: ${error.message}`, 'error');
+                    this.updateState('error');
+                }
+            }
+
+            disconnect() {
+                if (this.pc) {
+                    this.pc.close();
+                    this.pc = null;
+                }
+                if (this.statsInterval) clearInterval(this.statsInterval);
+                this.video.srcObject = null;
+                this.updateState('disconnected');
+                this.log('Disconnected');
+            }
+
+            updateState(state) {
+                document.getElementById('connState').textContent = state;
+                if (this.pc) {
+                    document.getElementById('iceState').textContent = this.pc.iceConnectionState;
+                    document.getElementById('iceGather').textContent = this.pc.iceGatheringState;
+                }
+            }
+
+            async updateStats() {
+                if (!this.pc) return;
+                try {
+                    const stats = await this.pc.getStats();
+                    stats.forEach(report => {
+                        if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                            if (report.frameWidth && report.frameHeight) {
+                                document.getElementById('resolution').textContent = `${report.frameWidth}x${report.frameHeight}`;
+                            }
+                            if (report.framesPerSecond) {
+                                document.getElementById('fps').textContent = report.framesPerSecond.toFixed(1) + ' fps';
+                            }
+                            const bitrate = (report.bytesReceived * 8 / 1000000).toFixed(2);
+                            document.getElementById('bitrate').textContent = bitrate + ' Mbps';
+                        }
+                    });
+                } catch (e) {
+                    console.error('Stats error:', e);
+                }
+            }
+
+            async getStats() {
+                if (!this.pc) {
+                    this.log('No active connection', 'error');
+                    return;
+                }
+                try {
+                    const stats = await this.pc.getStats();
+                    this.log('Stats retrieved: ' + stats.size + ' reports');
+                    await this.updateStats();
+                } catch (e) {
+                    this.log(`Stats error: ${e.message}`, 'error');
+                }
+            }
+        }
+
+        const app = new WebRTCPlayer('video');
+    </script>
+</body>
+</html>
