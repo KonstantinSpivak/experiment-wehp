@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra Minimal Одна строка</title>
+    <style>
+        body { font-family: Arial; background: #000; color: #fff; padding: 20px; margin: 0; }
+        .container { max-width: 800px; margin: 0 auto; }
+        a { color: #0099ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        video { width: 100%; max-width: 800px; background: #000; margin: 20px 0; border-radius: 4px; }
+        button { padding: 8px 16px; background: #0099ff; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin: 5px; }
+        button:hover { background: #00bfff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html">← На главную</a>
+        <h1>🚀 Ultra Minimal - 1 Line Player</h1>
+        <p>Ссамые короткие варианты WHEP плеера</p>
+        <video id="v" autoplay muted controls></video>
+        <button onclick="(async()=>{let p=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});p.addTransceiver('video',{direction:'recvonly'});p.addTransceiver('audio',{direction:'recvonly'});p.ontrack=e=>document.getElementById('v').srcObject=e.streams[0];let o=await p.createOffer();p.setLocalDescription(o);let r=await fetch('http://192.168.0.108:8889/orange/stream/whep',{method:'POST',headers:{'Content-Type':'application/sdp'},body:o.sdp});p.setRemoteDescription(new RTCSessionDescription({type:'answer',sdp:await r.text()}))})();">Play</button>
+    </div>
+</body>
+</html>
