@@ -1,2 +1,182 @@
 <!DOCTYPE html>
-<html lang="ru": 
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Component Advanced</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00bfff;
+            padding-bottom: 20px;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            color: #00bfff;
+        }
+        whep-video {
+            width: 100%;
+            max-width: 800px;
+            display: block;
+            margin: 20px auto;
+            border-radius: 8px;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover {
+            background: #0052a3;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00bfff;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #00d4ff;
+        }
+        .stats {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 3px solid #00bfff;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .stat-item {
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00bfff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← Вернуться на главную</a>
+
+        <div class="header">
+            <h1>🎥 Web Component Advanced</h1>
+            <p style="color: #aaa;">Web Component с расширенным управлением и статистикой</p>
+        </div>
+
+        <whep-video id="player" src="http://192.168.0.108:8889/orange/stream/whep" autoplay muted controls></whep-video>
+
+        <div class="controls">
+            <button onclick="player.play()">Play</button>
+            <button onclick="player.pause()">Pause</button>
+            <button onclick="toggleMute()">Mute/Unmute</button>
+            <button onclick="fullscreen()">Fullscreen</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">Status</div>
+                <div class="stat-value" id="status">Готов</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Звук</div>
+                <div class="stat-value" id="muted">Включен</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Playback</div>
+                <div class="stat-value" id="playback">Stopped</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Events</div>
+                <div class="stat-value" id="events">0</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@eyevinn/whep-video-component@latest/dist/whep-video.component.js"></script>
+    <script>
+        const player = document.getElementById('player');
+        let eventCount = 0;
+
+        player.addEventListener('play', () => {
+            document.getElementById('status').textContent = 'Playing';
+            document.getElementById('playback').textContent = 'Playing';
+            incrementEvents();
+        });
+
+        player.addEventListener('pause', () => {
+            document.getElementById('status').textContent = 'Paused';
+            document.getElementById('playback').textContent = 'Paused';
+            incrementEvents();
+        });
+
+        player.addEventListener('error', (e) => {
+            document.getElementById('status').textContent = 'Error';
+            incrementEvents();
+        });
+
+        player.addEventListener('ended', () => {
+            document.getElementById('playback').textContent = 'Ended';
+            incrementEvents();
+        });
+
+        function toggleMute() {
+            player.muted = !player.muted;
+            document.getElementById('muted').textContent = player.muted ? 'Off' : 'On';
+            incrementEvents();
+        }
+
+        function fullscreen() {
+            if (player.requestFullscreen) {
+                player.requestFullscreen();
+            }
+        }
+
+        function incrementEvents() {
+            eventCount++;
+            document.getElementById('events').textContent = eventCount;
+        }
+    </script>
+</body>
+</html>
