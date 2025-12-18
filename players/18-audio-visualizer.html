@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tone.js Audio Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #00bfff;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-btn:hover { background: #00d4ff; }
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00bfff;
+            padding-bottom: 20px;
+        }
+        h1 { color: #00bfff; margin-bottom: 5px; }
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00bfff;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #00d4ff; }
+        #visualizer {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #00bfff;
+        }
+        .info {
+            background: rgba(0, 191, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #00bfff;
+        }
+        .info-item {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">← На главную</a>
+        <div class="header">
+            <h1>🎉 Tone.js Audio Visualizer</h1>
+            <p style="color: #aaa;">WebRTC с аудио визуализацией Tone.js</p>
+        </div>
+
+        <video id="video" autoplay muted controls></video>
+
+        <canvas id="visualizer"></canvas>
+
+        <div class="controls">
+            <button onclick="app.connect()">Connect</button>
+            <button onclick="app.disconnect()">Disconnect</button>
+            <button onclick="app.toggleVisualizer()">Toggle Viz</button>
+        </div>
+
+        <div class="info">
+            <div class="info-item"><strong>⚡ Status:</strong> <span id="status">Ready</span></div>
+            <div class="info-item"><strong>🎉 Visualizer:</strong> <span id="vizStatus">Off</span></div>
+            <div class="info-item"><strong>🔊 Frequencies:</strong> <span id="frequencies">-</span></div>
+        </div>
+    </div>
+
+    <script>
+        class AudioVisualizer {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.canvas = document.getElementById('visualizer');
+                this.ctx = this.canvas.getContext('2d');
+                this.pc = null;
+                this.vizEnabled = false;
+                this.audioContext = null;
+                this.analyser = null;
+            }
+
+            async connect() {
+                try {
+                    document.getElementById('status').textContent = 'Connecting...';
+                    this.pc = new RTCPeerConnection({
+                        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                    });
+
+                    this.pc.addTransceiver('video', { direction: 'recvonly' });
+                    this.pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                    this.pc.ontrack = (e) => {
+                        this.video.srcObject = e.streams[0];
+                        
+                        if (e.track.kind === 'audio' && !this.audioContext) {
+                            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            const source = this.audioContext.createMediaStreamSource(e.streams[0]);
+                            this.analyser = this.audioContext.createAnalyser();
+                            this.analyser.fftSize = 256;
+                            source.connect(this.analyser);
+                            
+                            if (this.vizEnabled) this.startVisualization();
+                        }
+                    };
+
+                    const offer = await this.pc.createOffer();
+                    await this.pc.setLocalDescription(offer);
+
+                    const res = await fetch('http://192.168.0.108:8889/orange/stream/whep', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/sdp' },
+                        body: offer.sdp
+                    });
+
+                    const answer = await res.text();
+                    await this.pc.setRemoteDescription(new RTCSessionDescription({
+                        type: 'answer',
+                        sdp: answer
+                    }));
+
+                    document.getElementById('status').textContent = 'Connected';
+
+                } catch (error) {
+                    document.getElementById('status').textContent = 'Error';
+                    console.error(error);
+                }
+            }
+
+            disconnect() {
+                if (this.pc) {
+                    this.pc.close();
+                    this.pc = null;
+                }
+                if (this.audioContext) {
+                    this.audioContext.close();
+                    this.audioContext = null;
+                }
+                this.video.srcObject = null;
+                document.getElementById('status').textContent = 'Disconnected';
+                document.getElementById('vizStatus').textContent = 'Off';
+            }
+
+            toggleVisualizer() {
+                this.vizEnabled = !this.vizEnabled;
+                document.getElementById('vizStatus').textContent = this.vizEnabled ? 'On' : 'Off';
+                if (this.vizEnabled && this.analyser) {
+                    this.startVisualization();
+                }
+            }
+
+            startVisualization() {
+                if (!this.vizEnabled || !this.analyser) return;
+
+                const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.analyser.getByteFrequencyData(dataArray);
+
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                const barWidth = this.canvas.width / dataArray.length * 2.5;
+                let barHeight;
+                let x = 0;
+
+                for (let i = 0; i < dataArray.length; i++) {
+                    barHeight = (dataArray[i] / 255) * this.canvas.height;
+
+                    const hue = (i / dataArray.length) * 360;
+                    this.ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                    this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth, barHeight);
+
+                    x += barWidth + 1;
+                }
+
+                if (Math.max(...dataArray) > 0) {
+                    document.getElementById('frequencies').textContent = Math.max(...dataArray).toFixed(0);
+                }
+
+                requestAnimationFrame(() => this.startVisualization());
+            }
+        }
+
+        const app = new AudioVisualizer();
+    </script>
+</body>
+</html>
