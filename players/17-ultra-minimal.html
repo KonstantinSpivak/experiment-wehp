@@ -20,7 +20,7 @@
         <h1>🚀 Ultra Minimal - 1 Line Player</h1>
         <p>Ссамые короткие варианты WHEP плеера</p>
         <video id="v" autoplay muted controls></video>
-        <button onclick="(async()=>{let p=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});p.addTransceiver('video',{direction:'recvonly'});p.addTransceiver('audio',{direction:'recvonly'});p.ontrack=e=>document.getElementById('v').srcObject=e.streams[0];let o=await p.createOffer();p.setLocalDescription(o);let r=await fetch('http://192.168.0.108:8889/orange/stream/whep',{method:'POST',headers:{'Content-Type':'application/sdp'},body:o.sdp});p.setRemoteDescription(new RTCSessionDescription({type:'answer',sdp:await r.text()}))})();">Play</button>
+        <button onclick="(async()=>{let p=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});p.addTransceiver('video',{direction:'recvonly'});p.addTransceiver('audio',{direction:'recvonly'});p.ontrack=e=>document.getElementById('v').srcObject=e.streams[0];let o=await p.createOffer();p.setLocalDescription(o);let r=await fetch('https://video-car-orange.jobait.xyz/amd_aggressive/whep',{method:'POST',headers:{'Content-Type':'application/sdp'},body:o.sdp});p.setRemoteDescription(new RTCSessionDescription({type:'answer',sdp:await r.text()}))})();">Play</button>
     </div>
 </body>
 </html>

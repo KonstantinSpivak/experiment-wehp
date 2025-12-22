@@ -108,14 +108,14 @@
         let hls = null;
 
         function playWHEP() {
-            const url = 'http://192.168.0.108:8889/orange/stream/whep';
+            const url = 'https://video-car-orange.jobait.xyz/amd_aggressive/whep';
             video.src = url;
             document.getElementById('source').textContent = 'WebRTC WHEP';
             video.play();
         }
 
         function playHLS() {
-            const url = 'http://192.168.0.108:8889/orange/stream/hls.m3u8';
+            const url = 'https://video-car-orange.jobait.xyz/amd_aggressive/whep/hls.m3u8';
             
             if (Hls.isSupported()) {
                 hls = new Hls();
@@ -134,7 +134,7 @@
 
         async function autoSwitch() {
             try {
-                const whepResponse = await fetch('http://192.168.0.108:8889/orange/stream/whep', {
+                const whepResponse = await fetch('https://video-car-orange.jobait.xyz/amd_aggressive/whep', {
                     method: 'HEAD',
                     signal: AbortSignal.timeout(2000)
                 });

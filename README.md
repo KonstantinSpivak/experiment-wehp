@@ -48,7 +48,7 @@ npx http-server
 ### WHEP Endpoint
 
 ```
-http://192.168.0.108:8889/orange/stream/whep
+https://video-car-orange.jobait.xyz/amd_aggressive/whep
 ```
 
 Внесите ваш конкретный WHEP URL в каждый плеер (уже заполнен в примерах).
@@ -85,7 +85,7 @@ http://192.168.0.108:8889/orange/stream/whep
 
 ### Вариант 1: Web Component (Самый быстрый)
 ```html
-<whep-video src="http://192.168.0.108:8889/orange/stream/whep" autoplay muted controls></whep-video>
+<whep-video src="https://video-car-orange.jobait.xyz/amd_aggressive/whep" autoplay muted controls></whep-video>
 <script src="https://unpkg.com/@eyevinn/whep-video-component@latest/dist/whep-video.component.js"></script>
 ```
 
@@ -98,7 +98,7 @@ pc.ontrack = (e) => video.srcObject = e.streams[0];
 const offer = await pc.createOffer();
 await pc.setLocalDescription(offer);
 
-const res = await fetch('http://192.168.0.108:8889/orange/stream/whep', {
+const res = await fetch('https://video-car-orange.jobait.xyz/amd_aggressive/whep', {
     method: 'POST',
     headers: {'Content-Type': 'application/sdp'},
     body: offer.sdp
@@ -116,7 +116,7 @@ await pc.setRemoteDescription(new RTCSessionDescription({
 <script src="https://cdn.jsdelivr.net/npm/video.js@7/dist/video.min.js"></script>
 <script>
     const player = videojs('player');
-    player.src({src: 'http://192.168.0.108:8889/orange/stream/whep', type: 'application/x-whep'});
+    player.src({src: 'https://video-car-orange.jobait.xyz/amd_aggressive/whep', type: 'application/x-whep'});
 </script>
 ```
 
@@ -154,17 +154,17 @@ await pc.setRemoteDescription(new RTCSessionDescription({
 
 Все плееры настроены на WHEP URL:
 ```
-http://192.168.0.108:8889/orange/stream/whep
+https://video-car-orange.jobait.xyz/amd_aggressive/whep
 ```
 
 Для изменения URL отредактируйте строку:
 ```javascript
-const WHEP_URL = 'http://192.168.0.108:8889/orange/stream/whep';
+const WHEP_URL = 'https://video-car-orange.jobait.xyz/amd_aggressive/whep';
 ```
 
 или в HTML:
 ```html
-src="http://192.168.0.108:8889/orange/stream/whep"
+src="https://video-car-orange.jobait.xyz/amd_aggressive/whep"
 ```
 
 ## 🔧 Требования

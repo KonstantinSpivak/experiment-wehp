@@ -189,7 +189,7 @@
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
 
-                const res = await fetch('http://192.168.0.108:8889/orange/stream/whep', {
+                const res = await fetch('https://video-car-orange.jobait.xyz/amd_aggressive/whep', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/sdp' },
                     body: offer.sdp

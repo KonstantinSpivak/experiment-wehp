@@ -144,7 +144,7 @@
         async function loadStream() {
             try {
                 document.getElementById('status').textContent = 'Loading...';
-                const manifestUri = 'http://192.168.0.108:8889/orange/stream/dash.mpd';
+                const manifestUri = 'https://video-car-orange.jobait.xyz/amd_aggressive/whep/dash.mpd';
                 await shakaPlayer.load(manifestUri);
                 document.getElementById('status').textContent = 'Loaded';
                 document.getElementById('playBtn').disabled = false;
